@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TPCO Chat</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+          "SF Pro Display", system-ui, sans-serif;
+        margin: 0;
+        padding: 12px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .chat-container {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25),
+          0 0 0 1px rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        width: 100%;
+        max-width: none;
+        height: calc(100vh - 24px);
+        max-height: none;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .chat-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        padding: 24px 40px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        text-align: center;
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .settings-btn {
+        position: absolute;
+        right: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+      }
+      .settings-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-50%) scale(1.05);
+      }
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease-out;
+      }
+      .modal h3 {
+        margin: 0 0 16px 0;
+        color: #2d3748;
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+      .modal input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1.5px solid rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+        font-family: inherit;
+      }
+      .modal input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      .modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+      .modal-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+      .modal-btn.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+      .modal-btn.primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      .modal-btn.secondary {
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+      }
+      .modal-btn.secondary:hover {
+        background: #e9ecef;
+      }
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .chat-header::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+      }
+      .chat-messages {
+        flex: 1;
+        padding: 24px 32px;
+        background: linear-gradient(to bottom, #fafafa 0%, #f5f5f5 100%);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+      }
+      .chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+      .chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.5);
+        border-radius: 3px;
+      }
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: rgba(156, 163, 175, 0.7);
+      }
+      .chat-url {
+        display: flex;
+        gap: 16px;
+        padding: 40px 32px 24px;
+        background: transparent;
+        align-items: center;
+        justify-content: center;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .chat-url input[type="text"] {
+        flex: 1;
+        padding: 16px 20px;
+        border-radius: 16px;
+        border: 1.5px solid rgba(0, 0, 0, 0.1);
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        font-family: inherit;
+        min-width: 300px;
+      }
+      .chat-url input[type="text"]:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      .chat-url button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 16px;
+        padding: 16px 28px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        white-space: nowrap;
+      }
+      .chat-url button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      .chat-url button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+      }
+      .chat-input {
+        display: flex;
+        gap: 12px;
+        padding: 20px 32px 24px;
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        align-items: flex-end;
+        border-radius: 0 0 16px 16px;
+      }
+      .chat-input input[type="text"] {
+        flex: 1;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1.5px solid rgba(0, 0, 0, 0.1);
+        font-size: 0.95rem;
+        outline: none;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        resize: none;
+        font-family: inherit;
+        line-height: 1.3;
+        height: 44px;
+        box-sizing: border-box;
+        color: #2d3748;
+      }
+      .chat-input input[type="text"]:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        background: #ffffff;
+      }
+
+      /* Disabled states */
+      .chat-input input[type="text"]:disabled {
+        background: #f5f5f5;
+        color: #999999;
+        border-color: #d0d0d0;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .chat-input input[type="file"]:disabled + .file-label {
+        background: #f5f5f5;
+        color: #999999;
+        border-color: #d0d0d0;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .file-label.disabled {
+        background: #f5f5f5 !important;
+        color: #999999 !important;
+        border-color: #d0d0d0 !important;
+        cursor: not-allowed !important;
+        opacity: 0.6 !important;
+      }
+
+      .chat-input button:disabled {
+        background: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+      }
+
+      .chat-input button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        min-width: 100px;
+        height: 44px;
+        box-sizing: border-box;
+      }
+      .chat-input button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      .chat-input button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+      }
+      .chat-input input[type="file"] {
+        display: none;
+      }
+      .file-label {
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.1) 0%,
+          rgba(118, 75, 162, 0.1) 100%
+        );
+        color: #667eea;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1.5px solid rgba(102, 126, 234, 0.2);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        user-select: none;
+        min-width: 100px;
+        height: 44px;
+        box-sizing: border-box;
+        justify-content: center;
+      }
+      .file-label:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-color: transparent;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+      .selected-files {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        margin-bottom: 0;
+        max-height: 44px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        align-items: center;
+      }
+      .selected-file {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 10px;
+        background: rgba(102, 126, 234, 0.05);
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        border-radius: 12px;
+        font-size: 0.85rem;
+        color: #2d3748;
+        animation: slideIn 0.2s ease-out;
+        height: 44px;
+        box-sizing: border-box;
+        min-width: 100px;
+        white-space: nowrap;
+        gap: 8px;
+      }
+      .selected-file .file-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
+      .selected-file .file-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+        font-size: 0.8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #2d3748;
+      }
+      .selected-file .file-size {
+        font-size: 0.7rem;
+        color: #718096;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .selected-file .remove-file {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+        cursor: pointer;
+        padding: 1px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        font-size: 0.7rem;
+        line-height: 1;
+        width: 14px;
+        height: 14px;
+        max-width: 14px;
+        min-width: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-left: 6px;
+      }
+      .selected-file .remove-file:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #dc2626;
+        transform: scale(1.05);
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .message {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 4px;
+        animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .message.user {
+        align-items: flex-end;
+      }
+      .bubble {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        padding: 8px 12px;
+        border-radius: 14px 14px 4px 14px;
+        font-size: 0.9rem;
+        max-width: 85%;
+        word-break: break-word;
+        box-shadow: 0 2px 12px rgba(102, 126, 234, 0.25);
+        margin-bottom: 4px;
+        transition: all 0.2s ease;
+        position: relative;
+        line-height: 1.3;
+      }
+      .bubble::before {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 0;
+        bottom: -1px;
+        left: -6px;
+        border: 6px solid transparent;
+        border-top-color: linear-gradient(135deg, rgb(245, 158, 11) 0%, rgb(249, 115, 22) 100%);
+        border-right-color: linear-gradient(135deg, rgb(245, 158, 11) 0%, rgb(249, 115, 22) 100%);
+        transform: rotate(-45deg);
+      }
+      .message.user .bubble {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        color: #2d3748;
+        border-radius: 14px 14px 14px 4px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .message.user .bubble::before {
+        left: auto;
+        right: -6px;
+        border-top-color: #ffffff;
+        border-left-color: #ffffff;
+        border-right-color: transparent;
+        border-bottom-color: transparent;
+        transform: rotate(45deg);
+      }
+      .loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        margin: 8px 0;
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 14px 14px 4px 14px;
+        max-width: 160px;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+      }
+      .loading-text {
+        font-size: 0.9rem;
+        color: #667eea;
+        font-weight: 500;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #667eea;
+        animation: pulse 1.4s infinite ease-in-out;
+        opacity: 0.3;
+      }
+      .dot:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      .processing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.1) 0%,
+          rgba(118, 75, 162, 0.1) 100%
+        );
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 14px 14px 4px 14px;
+        margin: 8px 0;
+        max-width: 200px;
+        animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .processing-text {
+        font-size: 0.9rem;
+        color: #667eea;
+        font-weight: 600;
+      }
+      .processing-dots {
+        display: flex;
+        gap: 4px;
+      }
+      @keyframes pulse {
+        0%,
+        80%,
+        100% {
+          transform: scale(0.8);
+          opacity: 0.3;
+        }
+        40% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+      }
+      @keyframes messageSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(15px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .markdown {
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+      .markdown pre {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 12px 16px;
+        border-radius: 12px;
+        overflow-x: auto;
+        font-size: 0.9rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        margin: 8px 0;
+      }
+      .markdown code {
+        background: rgba(0, 0, 0, 0.08);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+          "Courier New", monospace;
+      }
+      .markdown a {
+        color: #ffffff;
+        background: transparent;
+        text-decoration: underline;
+        font-weight: 600;
+        border-radius: 0;
+        padding: 0;
+        transition: all 0.2s ease;
+        border: none;
+      }
+      .markdown a:hover {
+        background: transparent;
+        color: #f1f5f9;
+        transform: translateY(-1px);
+        box-shadow: none;
+        text-decoration: underline;
+      }
+      .markdown ul,
+      .markdown ol {
+        margin-left: 20px;
+        padding-left: 0;
+      }
+      .markdown li {
+        margin-bottom: 4px;
+      }
+      .markdown blockquote {
+        border-left: 4px solid #667eea;
+        background: rgba(102, 126, 234, 0.05);
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 12px 0;
+        font-style: italic;
+      }
+      .markdown h1,
+      .markdown h2,
+      .markdown h3,
+      .markdown h4,
+      .markdown h5,
+      .markdown h6 {
+        color: #1f2937;
+        font-weight: 600;
+        margin-top: 16px;
+        margin-bottom: 8px;
+        line-height: 1.3;
+      }
+      .markdown p {
+        margin-bottom: 12px;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        body {
+          padding: 8px;
+        }
+        .chat-container {
+          height: calc(100vh - 16px);
+          max-height: none;
+          border-radius: 12px;
+        }
+        .chat-header {
+          padding: 16px 24px;
+          font-size: 1.2rem;
+          border-radius: 12px 12px 0 0;
+          text-align: center;
+        }
+        .chat-messages {
+          padding: 16px 20px;
+          gap: 12px;
+        }
+        .chat-url {
+          padding: 24px 20px 16px;
+          gap: 12px;
+          flex-direction: column;
+        }
+        .chat-url input[type="text"] {
+          min-width: auto;
+          width: 100%;
+        }
+        .chat-input {
+          padding: 16px 20px 20px;
+          gap: 8px;
+          border-radius: 0 0 12px 12px;
+        }
+        .chat-input input[type="text"] {
+          padding: 14px 16px;
+          font-size: 16px; /* Prevents zoom on iOS */
+          border-radius: 14px;
+        }
+        .chat-input button {
+          padding: 14px 20px;
+          border-radius: 14px;
+          font-size: 0.95rem;
+        }
+        .file-label {
+          padding: 12px 16px;
+          border-radius: 14px;
+          font-size: 0.9rem;
+        }
+        .bubble {
+          max-width: 90%;
+          padding: 14px 16px;
+          border-radius: 16px 16px 4px 16px;
+          font-size: 0.95rem;
+        }
+        .message.user .bubble {
+          border-radius: 16px 16px 16px 4px;
+        }
+        .selected-file {
+          padding: 8px 12px;
+          border-radius: 10px;
+        }
+        .selected-file .file-name {
+          font-size: 0.85rem;
+        }
+        .selected-file .file-size {
+          font-size: 0.75rem;
+        }
+        .processing-indicator {
+          max-width: 240px;
+          padding: 14px 16px;
+          border-radius: 16px 16px 4px 16px;
+        }
+        .loading {
+          padding: 14px 16px;
+          border-radius: 16px 16px 4px 16px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .chat-input {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+        }
+        .chat-input > div:last-child {
+          width: 100% !important;
+        }
+        .chat-input input[type="text"] {
+          margin-bottom: 8px;
+        }
+        .bubble {
+          max-width: 95%;
+        }
+        .chat-header {
+          font-size: 1.2rem;
+          text-align: center;
+        }
+      }
+
+      /* Enhanced focus states for accessibility */
+      .chat-input input[type="text"]:focus,
+      .chat-url input[type="text"]:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+      }
+
+      .chat-input button:focus,
+      .chat-url button:focus,
+      .file-label:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+      }
+
+      /* Improved animations */
+      .chat-container {
+        animation: containerFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes containerFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* Smooth transitions for interactive elements */
+      .bubble,
+      .file-label,
+      .chat-input button,
+      .remove-file {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .bubble:hover {
+        transform: translateY(-1px);
+      }
+
+      .message.user .bubble:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">
+        TPCO Knowledgebase Chat
+        <button class="settings-btn" id="settingsBtn" title="Update URL">
+          <svg
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
+      <form class="chat-url" id="chatUrlForm" style="display: none">
+        <input
+          type="text"
+          id="chatUrlInput"
+          placeholder="Enter chat webhook URL..."
+          required
+        />
+        <button type="submit">Connect</button>
+      </form>
+      <div class="chat-messages" id="chatMessages"></div>
+      <form class="chat-input" id="chatInputForm">
+        <div
+          style="display: flex; gap: 12px; align-items: flex-end; width: 100%"
+        >
+          <label for="fileInput" class="file-label">
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              viewBox="0 0 24 24"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Upload
+          </label>
+          <div class="selected-files" id="selectedFiles"></div>
+          <input type="file" id="fileInput" multiple />
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="Type your message..."
+            autocomplete="off"
+          />
+          <button type="submit">Send</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <h3>Update Chat URL</h3>
+        <input
+          type="url"
+          id="modalUrlInput"
+          placeholder="Enter your n8n webhook URL..."
+          value=""
+        />
+        <div class="modal-buttons">
+          <button class="modal-btn secondary" id="modalCancel">Cancel</button>
+          <button class="modal-btn primary" id="modalSave">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      // Helper to convert file to base64
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+      const chatUrlForm = document.getElementById("chatUrlForm");
+      const chatUrlInput = document.getElementById("chatUrlInput");
+      const chatInputForm = document.getElementById("chatInputForm");
+      const chatInput = document.getElementById("chatInput");
+      const chatMessages = document.getElementById("chatMessages");
+      const fileInput = document.getElementById("fileInput");
+      const selectedFilesContainer = document.getElementById("selectedFiles");
+      const settingsBtn = document.getElementById("settingsBtn");
+      const modalOverlay = document.getElementById("modalOverlay");
+      const modalUrlInput = document.getElementById("modalUrlInput");
+      const modalCancel = document.getElementById("modalCancel");
+      const modalSave = document.getElementById("modalSave");
+      let chatUrl =
+        "https://gkchat.app.n8n.cloud/webhook/4091fa09-fb9a-4039-9411-7104d213f601/chat"; // Replace with your actual webhook URL
+      let loadingElem = null;
+      let selectedFiles = [];
+      let ws = null;
+      let currentSessionId = null;
+      let processingElem = null;
+
+      // Format file size
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 Bytes";
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      }
+
+      // Update selected files display
+      function updateSelectedFilesDisplay() {
+        selectedFilesContainer.innerHTML = "";
+        selectedFiles.forEach((file, index) => {
+          const fileDiv = document.createElement("div");
+          fileDiv.className = "selected-file";
+          fileDiv.innerHTML = `
+            <div class="file-info">
+              <div class="file-name">${file.name}</div>
+              <div class="file-size">${formatFileSize(file.size)}</div>
+            </div>
+            <button type="button" class="remove-file" onclick="removeSelectedFile(${index})" title="Remove file">×</button>
+          `;
+          selectedFilesContainer.appendChild(fileDiv);
+        });
+        selectedFilesContainer.style.display =
+          selectedFiles.length > 0 ? "flex" : "none";
+      }
+
+      // Remove selected file
+      function removeSelectedFile(index) {
+        selectedFiles.splice(index, 1);
+        updateSelectedFilesDisplay();
+      }
+
+      // Clear all selected files
+      function clearSelectedFiles() {
+        selectedFiles = [];
+        fileInput.value = "";
+        updateSelectedFilesDisplay();
+      }
+      function showProcessing() {
+        hideProcessing(); // Remove any existing processing indicator
+
+        // Disable input elements during processing
+        document.getElementById("chatInput").disabled = true;
+        document.getElementById("fileInput").disabled = true;
+        document.querySelector(
+          '#chatInputForm button[type="submit"]'
+        ).disabled = true;
+
+        // Add disabled class to file label
+        document.querySelector(".file-label").classList.add("disabled");
+
+        processingElem = document.createElement("div");
+        processingElem.className = "message bot";
+        const indicator = document.createElement("div");
+        indicator.className = "processing-indicator";
+        indicator.innerHTML = `
+          <div class="processing-text">Processing</div>
+          <div class="processing-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+        `;
+        processingElem.appendChild(indicator);
+        chatMessages.appendChild(processingElem);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function hideProcessing() {
+        if (processingElem && processingElem.parentNode) {
+          processingElem.parentNode.removeChild(processingElem);
+          processingElem = null;
+        }
+
+        // Re-enable input elements after processing
+        document.getElementById("chatInput").disabled = false;
+        document.getElementById("fileInput").disabled = false;
+        document.querySelector(
+          '#chatInputForm button[type="submit"]'
+        ).disabled = false;
+
+        // Remove disabled class from file label
+        document.querySelector(".file-label").classList.remove("disabled");
+      }
+      function removeHeartbeatMessages() {
+        const bubbles = chatMessages.querySelectorAll(".bubble");
+        bubbles.forEach((bubble) => {
+          const text = bubble.textContent.trim();
+          if (
+            text.startsWith("n8n|heartbeat") ||
+            text.startsWith("n8n|continue") ||
+            text.trim() === "" ||
+            text.startsWith("n8n|")
+          ) {
+            if (bubble.parentElement) {
+              bubble.parentElement.remove();
+            }
+          }
+        });
+      }
+      function connectWebSocket(sessionId, executionId) {
+        if (ws) {
+          ws.close();
+        }
+        const wsUrl = `wss://gkchat.app.n8n.cloud/chat?sessionId=${sessionId}&executionId=${executionId}&isPublic=true`;
+        ws = new WebSocket(wsUrl);
+
+        // Show processing when WebSocket connects
+        showProcessing();
+
+        ws.onmessage = function (event) {
+          try {
+            const msg = JSON.parse(event.data);
+            let content = msg.reply || msg.output || msg.text || event.data;
+
+            // Enhanced filtering for n8n system messages
+            if (typeof content === "string") {
+              const cleanContent = content.trim();
+
+              // Handle heartbeat messages specifically
+              if (cleanContent === "n8n|heartbeat") {
+                // Send heartbeat acknowledgment back
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  ws.send("n8n|heartbeat-ack");
+                }
+                removeHeartbeatMessages();
+                // Keep processing indicator active
+                if (!processingElem) {
+                  showProcessing();
+                }
+                return;
+              }
+
+              if (
+                cleanContent.startsWith("n8n|") ||
+                cleanContent === "" ||
+                cleanContent.match(/^(heartbeat|continue|ping|pong)$/i)
+              ) {
+                removeHeartbeatMessages();
+                // Keep processing indicator active
+                if (!processingElem) {
+                  showProcessing();
+                }
+                return;
+              }
+            }
+
+            // If content is an object, try to get a meaningful string
+            if (typeof content === "object") {
+              content = JSON.stringify(content);
+            }
+
+            // Only hide processing and show message if we have meaningful content
+            if (content && content.trim() !== "") {
+              hideProcessing();
+              removeHeartbeatMessages();
+              addMessage(content, "bot");
+            }
+          } catch (e) {
+            // Handle raw text messages including heartbeat
+            if (event.data && event.data.trim() === "n8n|heartbeat") {
+              // Send heartbeat acknowledgment back
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send("n8n|heartbeat-ack");
+              }
+              removeHeartbeatMessages();
+              return;
+            }
+
+            // Only process non-system messages
+            if (
+              event.data &&
+              !event.data.startsWith("n8n|") &&
+              event.data.trim() !== ""
+            ) {
+              hideProcessing();
+              removeHeartbeatMessages();
+              addMessage(event.data, "bot");
+            }
+          }
+        };
+
+        ws.onerror = function () {
+          hideProcessing();
+        };
+
+        ws.onclose = function () {
+          hideProcessing();
+        };
+      }
+      // Initialize chat directly
+      function initializeChat() {
+        if (chatUrl && chatUrl !== "YOUR_WEBHOOK_URL_HERE") {
+          chatInputForm.style.display = "flex";
+          chatInput.focus();
+          addSystemMessage("Chat is ready to use!");
+        } else {
+          addSystemMessage(
+            "Please update the webhook URL using the settings button."
+          );
+        }
+      }
+
+      // Modal functionality
+      function openModal() {
+        modalUrlInput.value = chatUrl;
+        modalOverlay.style.display = "flex";
+        modalUrlInput.focus();
+        modalUrlInput.select();
+      }
+
+      function closeModal() {
+        modalOverlay.style.display = "none";
+      }
+
+      function updateChatUrl() {
+        const newUrl = modalUrlInput.value.trim();
+        if (newUrl) {
+          chatUrl = newUrl;
+          closeModal();
+          // Clear chat messages
+          chatMessages.innerHTML = "";
+          // Reset session
+          currentSessionId = null;
+          if (ws) {
+            ws.close();
+            ws = null;
+          }
+          addSystemMessage(`Webhook URL updated! Chat is ready to use.`);
+          chatInput.focus();
+        }
+      }
+
+      // Event listeners for modal
+      settingsBtn.addEventListener("click", openModal);
+      modalCancel.addEventListener("click", closeModal);
+      modalSave.addEventListener("click", updateChatUrl);
+
+      // Close modal when clicking outside
+      modalOverlay.addEventListener("click", function (e) {
+        if (e.target === modalOverlay) {
+          closeModal();
+        }
+      });
+
+      // Handle Enter key in modal input
+      modalUrlInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          updateChatUrl();
+        } else if (e.key === "Escape") {
+          closeModal();
+        }
+      });
+
+      chatInputForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (!message && selectedFiles.length === 0) return;
+
+        if (message) addMessage(message, "user");
+
+        // Show uploaded files
+        selectedFiles.forEach((file) => {
+          addFileMessage(file);
+        });
+
+        chatInput.value = "";
+        showLoading();
+
+        try {
+          // Use currentSessionId if available, else use fixed for first request
+          const sessionId = currentSessionId || "fixed-session-id-123";
+          let response, data;
+
+          if (selectedFiles.length > 0) {
+            const formData = new FormData();
+            formData.append("action", "sendMessage");
+            formData.append("sessionId", sessionId);
+            if (message) formData.append("chatInput", message);
+
+            // Append all selected files
+            selectedFiles.forEach((file, index) => {
+              formData.append("files", file, file.name);
+            });
+
+            response = await fetch(chatUrl, {
+              method: "POST",
+              body: formData,
+            });
+          } else {
+            response = await fetch(chatUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "sendMessage",
+                chatInput: message,
+                sessionId,
+              }),
+            });
+          }
+
+          // Clear selected files after sending
+          clearSelectedFiles();
+
+          if (!response.ok) throw new Error("Network error");
+          data = await response.json();
+          hideLoading();
+
+          // If executionId is present, open WebSocket using currentSessionId
+          if (data && data.executionId) {
+            connectWebSocket(sessionId, data.executionId);
+          }
+          // If sessionId is present in response, update currentSessionId
+          if (data && data.sessionId) {
+            currentSessionId = data.sessionId;
+          }
+          if (data && (data.reply || data.output)) {
+            addMessage(data.reply || data.output, "bot");
+          }
+        } catch (err) {
+          hideLoading();
+          addMessage("Error: " + err.message, "bot");
+        }
+      });
+      function addMessage(text, sender) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message " + sender;
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.innerHTML =
+          '<div class="markdown">' + marked.parse(text) + "</div>";
+        msgDiv.appendChild(bubble);
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function addFileMessage(file) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message user";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.innerHTML = `<div class="markdown"><strong>Uploaded:</strong> ${file.name}</div>`;
+        msgDiv.appendChild(bubble);
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function addSystemMessage(text) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message bot";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.style.background =
+          "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)";
+        bubble.style.color = "#fff";
+        bubble.style.borderRadius = "14px 14px 4px 14px";
+        bubble.innerHTML =
+          '<div class="markdown">' + marked.parse(text) + "</div>";
+        msgDiv.appendChild(bubble);
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function showLoading() {
+        hideLoading();
+        loadingElem = document.createElement("div");
+        loadingElem.className = "loading";
+        loadingElem.innerHTML = `
+          <div class="loading-text">Sending</div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        `;
+        chatMessages.appendChild(loadingElem);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function hideLoading() {
+        if (loadingElem && loadingElem.parentNode) {
+          loadingElem.parentNode.removeChild(loadingElem);
+          loadingElem = null;
+        }
+      }
+      fileInput.addEventListener("change", function (e) {
+        if (fileInput.files && fileInput.files.length > 0) {
+          // Add new files to the selected files array (avoiding duplicates)
+          Array.from(fileInput.files).forEach((file) => {
+            const isDuplicate = selectedFiles.some(
+              (existingFile) =>
+                existingFile.name === file.name &&
+                existingFile.size === file.size
+            );
+            if (!isDuplicate) {
+              selectedFiles.push(file);
+            }
+          });
+          updateSelectedFilesDisplay();
+          // Reset file input to allow selecting the same file again if needed
+          fileInput.value = "";
+        }
+      });
+      // Make functions globally accessible
+      window.removeSelectedFile = removeSelectedFile;
+
+      // Intercept link clicks for downloads
+      chatMessages.addEventListener("click", function (e) {
+        if (e.target.tagName === "A") {
+          const url = e.target.getAttribute("href");
+          if (url && url.match(/\.docx$|\.pdf$|\.xlsx$|\.csv$/i)) {
+            e.preventDefault();
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+      });
+
+      // Initialize chat when page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeChat();
+      });
+    </script>
+  </body>
+</html>
