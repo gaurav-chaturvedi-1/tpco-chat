@@ -1168,76 +1168,76 @@
         }
       });
 
-      chatInputForm.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message && selectedFiles.length === 0) return;
+      // chatInputForm.addEventListener("submit", async function (e) {
+      //   e.preventDefault();
+      //   const message = chatInput.value.trim();
+      //   if (!message && selectedFiles.length === 0) return;
 
-        if (message) addMessage(message, "user");
+      //   if (message) addMessage(message, "user");
 
-        // Show uploaded files
-        selectedFiles.forEach((file) => {
-          addFileMessage(file);
-        });
+      //   // Show uploaded files
+      //   selectedFiles.forEach((file) => {
+      //     addFileMessage(file);
+      //   });
 
-        chatInput.value = "";
-        showLoading();
+      //   chatInput.value = "";
+      //   showLoading();
 
-        try {
-          // Use currentSessionId if available, else use fixed for first request
-          const sessionId = currentSessionId || "fixed-session-id-123";
-          let response, data;
+      //   try {
+      //     // Use currentSessionId if available, else use fixed for first request
+      //     const sessionId = currentSessionId || "fixed-session-id-123";
+      //     let response, data;
 
-          if (selectedFiles.length > 0) {
-            const formData = new FormData();
-            formData.append("action", "sendMessage");
-            formData.append("sessionId", sessionId);
-            if (message) formData.append("chatInput", message);
+      //     if (selectedFiles.length > 0) {
+      //       const formData = new FormData();
+      //       formData.append("action", "sendMessage");
+      //       formData.append("sessionId", sessionId);
+      //       if (message) formData.append("chatInput", message);
 
-            // Append all selected files
-            selectedFiles.forEach((file, index) => {
-              formData.append("files", file, file.name);
-            });
+      //       // Append all selected files
+      //       selectedFiles.forEach((file, index) => {
+      //         formData.append("files", file, file.name);
+      //       });
 
-            response = await fetch(chatUrl, {
-              method: "POST",
-              body: formData,
-            });
-          } else {
-            response = await fetch(chatUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "sendMessage",
-                chatInput: message,
-                sessionId,
-              }),
-            });
-          }
+      //       response = await fetch(chatUrl, {
+      //         method: "POST",
+      //         body: formData,
+      //       });
+      //     } else {
+      //       response = await fetch(chatUrl, {
+      //         method: "POST",
+      //         headers: { "Content-Type": "application/json" },
+      //         body: JSON.stringify({
+      //           action: "sendMessage",
+      //           chatInput: message,
+      //           sessionId,
+      //         }),
+      //       });
+      //     }
 
-          // Clear selected files after sending
-          clearSelectedFiles();
+      //     // Clear selected files after sending
+      //     clearSelectedFiles();
 
-          if (!response.ok) throw new Error("Network error");
-          data = await response.json();
-          hideLoading();
+      //     if (!response.ok) throw new Error("Network error");
+      //     data = await response.json();
+      //     hideLoading();
 
-          // If executionId is present, open WebSocket using currentSessionId
-          if (data && data.executionId) {
-            connectWebSocket(sessionId, data.executionId);
-          }
-          // If sessionId is present in response, update currentSessionId
-          if (data && data.sessionId) {
-            currentSessionId = data.sessionId;
-          }
-          if (data && (data.reply || data.output)) {
-            addMessage(data.reply || data.output, "bot");
-          }
-        } catch (err) {
-          hideLoading();
-          addMessage("Error: " + err.message, "bot");
-        }
-      });
+      //     // If executionId is present, open WebSocket using currentSessionId
+      //     if (data && data.executionId) {
+      //       connectWebSocket(sessionId, data.executionId);
+      //     }
+      //     // If sessionId is present in response, update currentSessionId
+      //     if (data && data.sessionId) {
+      //       currentSessionId = data.sessionId;
+      //     }
+      //     if (data && (data.reply || data.output)) {
+      //       addMessage(data.reply || data.output, "bot");
+      //     }
+      //   } catch (err) {
+      //     hideLoading();
+      //     addMessage("Error: " + err.message, "bot");
+      //   }
+      // });
       function addMessage(text, sender) {
         const msgDiv = document.createElement("div");
         msgDiv.className = "message " + sender;
